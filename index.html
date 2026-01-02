@@ -1,285 +1,299 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لتي قسم 2 شرق</title>
-    
-    <!-- أيقونة التطبيق (النخلة) -->
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
-    
-    <!-- مكتبة التصميم (Tailwind) والأيقونات -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
-        .bank-card { background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); color: white; }
-        .tab-btn.active { color: #047857; position: relative; }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -5px; width: 20px; height: 3px; background: #047857; border-radius: 10px; left: 50%; transform: translateX(-50%); }
-        .hidden-section { display: none; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  doc, 
+  onSnapshot, 
+  setDoc, 
+  collection, 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged 
+} from 'firebase/firestore';
 
-    <!-- الهيدر العلوي -->
-    <header class="bg-[#064e3b] text-white pt-12 pb-6 px-6 rounded-b-[2.5rem] shadow-xl sticky top-0 z-50">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-black">لتي قسم 2 شرق</h1>
-                <p class="text-[11px] opacity-80 mt-1">محلية القولد - الولاية الشمالية</p>
-            </div>
-            <!-- أيقونة الإشعارات -->
-            <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
-                <i class="fas fa-bell"></i>
-            </div>
+// إعدادات قاعدة البيانات السحابية
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'latti-app-v3';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('home');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  
+  // البيانات القابلة للتعديل
+  const [data, setData] = useState({
+    bank: {
+      accountNumber: "52067764",
+      accountName: "العباس إدريس علي إدريس",
+      bankName: "بنك فيصل الإسلامي"
+    },
+    news: [
+      { id: 1, title: "إدارة لتي", text: "تم البدء في مشروع الإنارة"، time: "الآن", icon: "fa-bullhorn" },
+      { id: 2, title: "اجتماع", text: "اجتماع شباب المنطقة اليوم", time: "أمس", icon: "fa-users" }
+    ],
+    patients: [
+      { id: 1, name: "حالة (م.ع)", target: 500000, current: 150000 },
+      { id: 2, name: "عملية عاجلة", target: 800000, current: 200000 }
+    ],
+    services: [
+      { id: 1, name: "ترميم الطرق", progress: 60, status: "جاري العمل" },
+      { id: 2, name: "الكهرباء", progress: 30, status: "مرحلة 1" }
+    ]
+  });
+
+  // 1. المصادقة التلقائية
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  // 2. جلب البيانات من السحابة وتحديثها لحظياً
+  useEffect(() => {
+    if (!user) return;
+    const docRef = doc(db, 'artifacts', appId, 'public', 'mainData');
+    const unsub = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        setData(snap.data());
+      } else {
+        // إذا كانت أول مرة، نرفع البيانات الافتراضية
+        setDoc(docRef, data);
+      }
+    }, (err) => console.error("Firestore Error:", err));
+    return () => unsub();
+  }, [user]);
+
+  // 3. وظيفة حفظ التعديلات للسحابة
+  const saveData = async (newData) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'mainData'), newData);
+      alert("✅ تم تحديث التطبيق عند الجميع بنجاح!");
+    } catch (e) {
+      alert("❌ حدث خطأ أثناء الحفظ");
+    }
+  };
+
+  // وظائف لوحة التحكم
+  const updateBank = (field, value) => {
+    const newData = { ...data, bank: { ...data.bank, [field]: value } };
+    setData(newData);
+  };
+
+  const updateNews = (index, field, value) => {
+    const newNews = [...data.news];
+    newNews[index][field] = value;
+    setData({ ...data, news: newNews });
+  };
+
+  const deleteNews = (index) => {
+    const newNews = data.news.filter((_, i) => i !== index);
+    setData({ ...data, news: newNews });
+  };
+
+  const addNews = () => {
+    const newNews = [...data.news, { id: Date.now(), title: "عنوان جديد", text: "نص الخبر هنا", time: "الآن", icon: "fa-newspaper" }];
+    setData({ ...data, news: newNews });
+  };
+
+  const updatePatient = (index, field, value) => {
+    const newPatients = [...data.patients];
+    newPatients[index][field] = field === 'name' ? value : Number(value);
+    setData({ ...data, patients: newPatients });
+  };
+
+  if (!user) return <div className="flex items-center justify-center h-screen font-bold">جاري التحميل...</div>;
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-right pb-28 font-sans" dir="rtl">
+      
+      {/* الهيدر الثابت */}
+      <header className="bg-[#064e3b] text-white pt-10 pb-6 px-6 rounded-b-[2.5rem] shadow-xl sticky top-0 z-50">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-black">لتي قسم 2 شرق</h1>
+            <p className="text-[11px] opacity-70">إدارة: العباس إدريس</p>
+          </div>
+          <button onClick={() => setActiveTab('admin')} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+            <i className={`fas ${isAdmin ? 'fa-user-shield text-yellow-400' : 'fa-lock'}`}></i>
+          </button>
         </div>
-    </header>
+      </header>
 
-    <!-- المحتوى الرئيسي -->
-    <main class="p-5">
-
-        <!-- قسم الرئيسية -->
-        <section id="home-section" class="fade-in">
-            <!-- بطاقة البنك -->
-            <div class="bank-card p-6 rounded-[2rem] shadow-2xl mb-8 relative overflow-hidden">
-                <div class="absolute -left-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div class="flex justify-between items-start mb-6">
+      <main className="p-5">
+        
+        {/* قسم الرئيسية */}
+        {activeTab === 'home' && (
+          <div className="animate-in fade-in duration-500">
+            {/* بطاقة البنك */}
+            <div className="bg-gradient-to-br from-slate-900 to-blue-900 text-white p-6 rounded-[2rem] shadow-2xl mb-8 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-6">
                     <div>
-                        <p class="text-[10px] text-blue-200 mb-1">بيانات التحويل البنكي</p>
-                        <h3 class="font-black text-lg">بنك فيصل الإسلامي</h3>
+                        <p className="text-[10px] text-blue-200 mb-1">بيانات التحويل</p>
+                        <h3 className="font-black text-lg">{data.bank.bankName}</h3>
                     </div>
-                    <i class="fas fa-university text-2xl opacity-50"></i>
+                    <i className="fas fa-university text-2xl opacity-50"></i>
                 </div>
-                
-                <div class="mb-6">
-                    <p class="text-[10px] text-blue-200 mb-1">رقم الحساب</p>
-                    <div onclick="copyText('52067764')" class="flex items-center gap-3 bg-black/20 p-3 rounded-xl w-fit cursor-pointer active:scale-95 transition">
-                        <span class="text-2xl font-mono font-black tracking-widest">52067764</span>
-                        <i class="fas fa-copy text-sm opacity-70"></i>
-                    </div>
-                </div>
-
-                <div class="border-t border-white/20 pt-4">
-                    <p class="text-[10px] text-blue-200">صاحب الحساب</p>
-                    <p class="font-bold text-sm">العباس إدريس علي إدريس</p>
-                </div>
-            </div>
-
-            <!-- شريط الأخبار (عدل هنا في الكود لتحديث الأخبار للناس) -->
-            <div class="mb-4 flex items-center gap-2">
-                <i class="fas fa-newspaper text-green-700"></i>
-                <h3 class="font-bold text-gray-800">أخبار المنطقة (العباس ينشر)</h3>
-            </div>
-            
-            <div class="space-y-3">
-                <!-- خبر 1 -->
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-3">
-                    <div class="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-bullhorn"></i></div>
-                    <div>
-                        <p class="text-xs font-black text-gray-800 mb-1">إدارة لتي <span class="text-[9px] text-gray-400 font-normal mr-1">الآن</span></p>
-                        <p class="text-sm text-gray-600 leading-relaxed">تم بحمد الله البدء في مشروع إنارة الشوارع الرئيسية، وندعو الجميع للمساهمة.</p>
+                <div className="mb-6">
+                    <p className="text-[10px] text-blue-200 mb-1">رقم الحساب</p>
+                    <div onClick={() => {navigator.clipboard.writeText(data.bank.accountNumber); alert('تم النسخ')}} className="flex items-center gap-3 bg-black/20 p-3 rounded-xl w-fit cursor-pointer">
+                        <span className="text-2xl font-mono font-black tracking-widest">{data.bank.accountNumber}</span>
+                        <i className="fas fa-copy text-sm opacity-50"></i>
                     </div>
                 </div>
-                
-                <!-- خبر 2 -->
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-3">
-                    <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-users"></i></div>
-                    <div>
-                        <p class="text-xs font-black text-gray-800 mb-1">اجتماع عام <span class="text-[9px] text-gray-400 font-normal mr-1">أمس</span></p>
-                        <p class="text-sm text-gray-600 leading-relaxed">اجتماع هام لشباب المنطقة في النادي لمناقشة خطة الخريف.</p>
+                <div className="border-t border-white/20 pt-4">
+                    <p className="text-[10px] text-blue-200 italic">صاحب الحساب: {data.bank.accountName}</p>
+                </div>
+            </div>
+
+            {/* الأخبار */}
+            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i className="fas fa-newspaper text-green-700"></i> أخبار المنطقة
+            </h3>
+            <div className="space-y-3">
+              {data.news.map((item) => (
+                <div key={item.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-3">
+                  <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center shrink-0">
+                    <i className={`fas ${item.icon}`}></i>
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-gray-800">{item.title} <span className="text-[9px] text-gray-400 font-normal mr-1">{item.time}</span></p>
+                    <p className="text-sm text-gray-600 mt-1">{item.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* قسم التكافل */}
+        {activeTab === 'takaful' && (
+          <div className="space-y-6 animate-in fade-in">
+            <h2 className="text-xl font-black text-gray-800">الحالات الإنسانية</h2>
+            {data.patients.map((p, i) => (
+              <div key={p.id} className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-bold text-gray-800">{p.name}</h4>
+                  <span className="text-red-600 bg-red-50 px-3 py-1 rounded-full text-[10px] font-bold">باقي: {(p.target - p.current).toLocaleString()} ج</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-500 transition-all duration-1000" style={{ width: `${(p.current / p.target) * 100}%` }}></div>
+                </div>
+                <div className="flex justify-between mt-2 text-[10px] text-gray-400">
+                  <span>المجموع: {p.target.toLocaleString()}</span>
+                  <span>المجمع: {p.current.toLocaleString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* لوحة التحكم (المشرف فقط) */}
+        {activeTab === 'admin' && (
+          <div className="animate-in slide-in-from-bottom duration-500">
+            {!isAdmin ? (
+              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl text-center mt-10">
+                <i className="fas fa-shield-alt text-4xl text-gray-200 mb-4"></i>
+                <h3 className="font-bold text-lg mb-6">دخول المشرف</h3>
+                <input 
+                  type="password" 
+                  placeholder="كلمة السر (2510)" 
+                  className="w-full p-4 bg-gray-50 rounded-2xl text-center mb-4 border outline-none"
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                />
+                <button 
+                  onClick={() => adminPassword === "2510" ? setIsAdmin(true) : alert("خطأ")} 
+                  className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold"
+                >دخول</button>
+              </div>
+            ) : (
+              <div className="space-y-8 pb-10">
+                <div className="flex justify-between items-center bg-green-100 p-4 rounded-2xl">
+                    <span className="font-bold text-green-800">وضع التعديل نشط</span>
+                    <button onClick={() => saveData(data)} className="bg-green-600 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-lg">حفظ التغييرات للجميع</button>
+                </div>
+
+                {/* تعديل البنك */}
+                <div className="bg-white p-6 rounded-[2rem] border shadow-sm">
+                    <h4 className="font-bold mb-4 border-b pb-2">تعديل بيانات البنك</h4>
+                    <label className="text-xs text-gray-400">اسم البنك</label>
+                    <input className="w-full p-3 bg-gray-50 rounded-xl mb-3 border" value={data.bank.bankName} onChange={(e) => updateBank('bankName', e.target.value)} />
+                    <label className="text-xs text-gray-400">رقم الحساب</label>
+                    <input className="w-full p-3 bg-gray-50 rounded-xl mb-3 border" value={data.bank.accountNumber} onChange={(e) => updateBank('accountNumber', e.target.value)} />
+                    <label className="text-xs text-gray-400">اسم صاحب الحساب</label>
+                    <input className="w-full p-3 bg-gray-50 rounded-xl border" value={data.bank.accountName} onChange={(e) => updateBank('accountName', e.target.value)} />
+                </div>
+
+                {/* إدارة الأخبار */}
+                <div className="bg-white p-6 rounded-[2rem] border shadow-sm">
+                    <div className="flex justify-between mb-4 border-b pb-2">
+                        <h4 className="font-bold">إدارة الأخبار</h4>
+                        <button onClick={addNews} className="text-blue-600 text-xs font-bold">+ إضافة خبر</button>
                     </div>
+                    {data.news.map((n, i) => (
+                        <div key={n.id} className="p-4 bg-gray-50 rounded-xl mb-4 relative">
+                            <button onClick={() => deleteNews(i)} className="absolute left-2 top-2 text-red-400 text-xs">حذف</button>
+                            <input className="w-full bg-transparent font-bold text-sm mb-1 outline-none" value={n.title} onChange={(e) => updateNews(i, 'title', e.target.value)} />
+                            <textarea className="w-full bg-transparent text-xs outline-none" rows="2" value={n.text} onChange={(e) => updateNews(i, 'text', e.target.value)} />
+                        </div>
+                    ))}
                 </div>
-            </div>
-        </section>
 
-        <!-- قسم التكافل -->
-        <section id="takaful-section" class="hidden-section fade-in">
-            <h2 class="text-xl font-black text-gray-800 mb-4 px-2">باب التكافل</h2>
-            
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <!-- زر المرضى -->
-                <div onclick="openModal('patientModal')" class="bg-white p-5 rounded-[2rem] shadow-sm text-center border border-gray-100 active:scale-95 transition">
-                    <div class="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fas fa-heartbeat"></i></div>
-                    <h4 class="font-bold text-gray-800">دعم المرضى</h4>
-                    <p class="text-[10px] text-red-400 mt-1">ساهم في العلاج</p>
+                {/* إدارة الحالات */}
+                <div className="bg-white p-6 rounded-[2rem] border shadow-sm">
+                    <h4 className="font-bold mb-4 border-b pb-2">تعديل حالات التكافل</h4>
+                    {data.patients.map((p, i) => (
+                        <div key={p.id} className="p-4 border-b last:border-0">
+                            <input className="font-bold text-sm w-full mb-2" value={p.name} onChange={(e) => updatePatient(i, 'name', e.target.value)} />
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="text-[10px] text-gray-400">المطلوب</label>
+                                    <input type="number" className="w-full p-2 bg-gray-50 rounded" value={p.target} onChange={(e) => updatePatient(i, 'target', e.target.value)} />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-[10px] text-gray-400">المجمع حالياً</label>
+                                    <input type="number" className="w-full p-2 bg-gray-50 rounded" value={p.current} onChange={(e) => updatePatient(i, 'current', e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-                
-                <!-- زر الأسر -->
-                <div onclick="openModal('familyModal')" class="bg-white p-5 rounded-[2rem] shadow-sm text-center border border-gray-100 active:scale-95 transition">
-                    <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fas fa-box-open"></i></div>
-                    <h4 class="font-bold text-gray-800">الأسر المتعففة</h4>
-                    <p class="text-[10px] text-amber-400 mt-1">مشروع السلة</p>
-                </div>
-            </div>
-        </section>
+              </div>
+            )}
+          </div>
+        )}
 
-        <!-- قسم الخدمات -->
-        <section id="services-section" class="hidden-section fade-in">
-            <h2 class="text-xl font-black text-gray-800 mb-4 px-2">موقف الخدمات</h2>
-            
-            <!-- خدمة 1 -->
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 mb-4">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center"><i class="fas fa-tractor"></i></div>
-                        <h4 class="font-bold text-sm">ترميم الطرق</h4>
-                    </div>
-                    <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded">جاري العمل</span>
-                </div>
-                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-amber-500" style="width: 60%"></div>
-                </div>
-                <p class="text-[10px] text-gray-400 mt-2 text-left">اكتمل 60%</p>
-            </div>
+      </main>
 
-            <!-- خدمة 2 -->
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100 mb-4">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><i class="fas fa-lightbulb"></i></div>
-                        <h4 class="font-bold text-sm">كهرباء عامة</h4>
-                    </div>
-                    <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">مرحلة 1</span>
-                </div>
-                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-500" style="width: 30%"></div>
-                </div>
-                <p class="text-[10px] text-gray-400 mt-2 text-left">اكتمل 30%</p>
-            </div>
-        </section>
+      {/* الملاحة السفلية */}
+      <nav className="fixed bottom-6 left-6 right-6 h-20 bg-white/90 backdrop-blur-md rounded-[2.5rem] shadow-2xl flex justify-around items-center px-4 border border-white/50 z-40">
+        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-green-700' : 'text-gray-400'}`}>
+            <i className="fas fa-home text-xl"></i>
+            <span className="text-[9px] font-bold">الرئيسية</span>
+        </button>
+        <button onClick={() => setActiveTab('takaful')} className={`flex flex-col items-center gap-1 ${activeTab === 'takaful' ? 'text-green-700' : 'text-gray-400'}`}>
+            <i className="fas fa-hand-holding-heart text-xl"></i>
+            <span className="text-[9px] font-bold">تكافل</span>
+        </button>
+        <button onClick={() => setActiveTab('admin')} className={`flex flex-col items-center gap-1 ${activeTab === 'admin' ? 'text-green-700' : 'text-gray-400'}`}>
+            <i className="fas fa-cog text-xl"></i>
+            <span className="text-[9px] font-bold">الإعدادات</span>
+        </button>
+      </nav>
 
-        <!-- قسم الإدارة -->
-        <section id="admin-section" class="hidden-section fade-in">
-            <div class="bg-white p-8 rounded-[2rem] shadow-lg text-center mt-10 max-w-sm mx-auto">
-                <i class="fas fa-user-shield text-4xl text-gray-300 mb-4"></i>
-                <h3 class="font-bold text-lg mb-4">دخول المشرف (العباس)</h3>
-                <input type="password" id="adminPass" placeholder="الرمز السري (2510)" class="w-full p-4 bg-gray-50 rounded-xl text-center mb-4 border outline-none font-bold">
-                <button onclick="checkAdmin()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold">دخول</button>
-            </div>
-            <div id="adminPanel" class="hidden mt-6 bg-green-50 p-6 rounded-[2rem] border border-green-200 text-center">
-                <h3 class="font-bold text-green-800 mb-2">أهلاً بك يا مشرف</h3>
-                <p class="text-xs text-green-600 leading-relaxed">لتحديث الأخبار والحالات عند جميع الناس، يرجى تعديل النصوص داخل ملف (index.html) في الموقع مباشرة، فهي الطريقة الأسرع والأكثر ثباتاً.</p>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- النوافذ المنبثقة (Modals) -->
-    
-    <!-- نافذة المرضى -->
-    <div id="patientModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 relative animate-up">
-            <button onclick="closeModal('patientModal')" class="absolute left-5 top-5 text-gray-400 w-8 h-8 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fas fa-heartbeat"></i></div>
-                <h3 class="font-black text-xl">قائمة المرضى</h3>
-            </div>
-            
-            <!-- مريض 1 (للتعديل: غير الأسماء والأرقام هنا) -->
-            <div class="bg-gray-50 p-4 rounded-2xl mb-3 border border-gray-200">
-                <div class="flex justify-between font-bold text-sm mb-2">
-                    <span>حالة (م.ع)</span>
-                    <span class="text-red-600 bg-red-50 px-2 rounded">باقي: 150,000</span>
-                </div>
-                <div class="w-full h-2 bg-gray-200 rounded-full">
-                    <div class="h-full bg-red-500 rounded-full" style="width: 70%"></div>
-                </div>
-                <button onclick="copyText('52067764')" class="mt-3 w-full bg-white border border-gray-300 py-2 rounded-lg text-xs font-bold">تبرع لهذه الحالة</button>
-            </div>
-
-            <!-- مريض 2 -->
-            <div class="bg-gray-50 p-4 rounded-2xl mb-3 border border-gray-200">
-                <div class="flex justify-between font-bold text-sm mb-2">
-                    <span>عملية عاجلة (أ.خ)</span>
-                    <span class="text-red-600 bg-red-50 px-2 rounded">باقي: 500,000</span>
-                </div>
-                <div class="w-full h-2 bg-gray-200 rounded-full">
-                    <div class="h-full bg-red-500 rounded-full" style="width: 20%"></div>
-                </div>
-                <button onclick="copyText('52067764')" class="mt-3 w-full bg-white border border-gray-300 py-2 rounded-lg text-xs font-bold">تبرع لهذه الحالة</button>
-            </div>
-        </div>
     </div>
-
-    <!-- نافذة الأسر -->
-    <div id="familyModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 relative animate-up text-center">
-            <button onclick="closeModal('familyModal')" class="absolute left-5 top-5 text-gray-400 w-8 h-8 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
-            <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-box-open"></i></div>
-            <h3 class="font-black text-xl mb-2">سلة الأسر المتعففة</h3>
-            <p class="text-sm text-gray-500 mb-6">هدفنا توفير 50 سلة غذائية شهرية.</p>
-            <div class="bg-green-50 p-4 rounded-xl border border-green-200 mb-4">
-                <p class="font-bold text-green-800 text-sm">قيمة المساهمة</p>
-                <p class="font-black text-2xl text-green-600">5,000 ج.س</p>
-            </div>
-            <button onclick="copyText('52067764')" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold shadow-lg">نسخ رقم الحساب</button>
-        </div>
-    </div>
-
-    <!-- الشريط السفلي -->
-    <nav class="fixed bottom-6 left-6 right-6 h-20 bg-white/90 backdrop-blur-lg rounded-[2.5rem] shadow-2xl flex justify-around items-center px-4 border border-white/50 z-40">
-        <button onclick="switchTab('home')" id="btn-home" class="tab-btn active flex flex-col items-center gap-1 text-emerald-700 w-12">
-            <i class="fas fa-home text-xl"></i>
-            <span class="text-[9px] font-bold">الرئيسية</span>
-        </button>
-        <button onclick="switchTab('takaful')" id="btn-takaful" class="tab-btn flex flex-col items-center gap-1 text-gray-400 w-12">
-            <i class="fas fa-hand-holding-heart text-xl"></i>
-            <span class="text-[9px] font-bold">تكافل</span>
-        </button>
-        <button onclick="switchTab('services')" id="btn-services" class="tab-btn flex flex-col items-center gap-1 text-gray-400 w-12">
-            <i class="fas fa-hard-hat text-xl"></i>
-            <span class="text-[9px] font-bold">خدمات</span>
-        </button>
-        <button onclick="switchTab('admin')" id="btn-admin" class="tab-btn flex flex-col items-center gap-1 text-gray-400 w-12">
-            <i class="fas fa-user-circle text-xl"></i>
-            <span class="text-[9px] font-bold">إدارة</span>
-        </button>
-    </nav>
-
-    <script>
-        function switchTab(tabId) {
-            // إخفاء الكل
-            document.querySelectorAll('section').forEach(el => el.classList.add('hidden-section'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('active', 'text-emerald-700');
-                el.classList.add('text-gray-400');
-            });
-            
-            // إظهار المطلوب
-            document.getElementById(tabId + '-section').classList.remove('hidden-section');
-            const btn = document.getElementById('btn-' + tabId);
-            btn.classList.add('active', 'text-emerald-700');
-            btn.classList.remove('text-gray-400');
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        function copyText(text) {
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert("✅ تم نسخ الرقم: " + text);
-        }
-
-        function checkAdmin() {
-            const p = document.getElementById('adminPass').value;
-            if(p === "2510") {
-                document.getElementById('adminPanel').classList.remove('hidden');
-            } else {
-                alert("الرمز خطأ");
-            }
-        }
-    </script>
-</body>
-</html>
-
+  );
+}
 
