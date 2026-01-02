@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق لتي قسم 2 شرق</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-green: #065f46;
+            --secondary-gold: #d4af37;
+            --bg-light: #f0f4f8;
+        }
+
+        body { 
+            font-family: 'Noto Kufi Arabic', sans-serif; 
+            background-color: var(--bg-light);
+            color: #1e293b;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-active { 
+            color: var(--primary-green); 
+            position: relative;
+        }
+
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            width: 20px;
+            height: 4px;
+            background: var(--secondary-gold);
+            border-radius: 10px;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .animate-up { animation: slideUp 0.4s ease-out; }
+    </style>
+</head>
+<body class="pb-28">
+
+    <!-- الهيدر العلوي -->
+    <header class="gradient-header text-white p-8 pt-12 rounded-b-[3.5rem] shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 opacity-10">
+            <i class="fas fa-leaf text-[10rem] -rotate-45"></i>
+        </div>
+        
+        <div class="relative z-10 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight">لتي قسم 2 شرق</h1>
+                <p class="text-xs text-green-100 opacity-90 mt-2 flex items-center gap-2">
+                    <i class="fas fa-map-marker-alt text-amber-400"></i> الولاية الشمالية - محلية القولد
+                </p>
+            </div>
+            <!-- أيقونة الحساب البنكي المخصصة -->
+            <button onclick="toggleModal('accountModal')" class="group relative">
+                <div class="absolute -inset-1 bg-amber-400 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000"></div>
+                <div class="relative w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+                    <i class="fas fa-university text-green-800 text-2xl"></i>
+                </div>
+            </button>
+        </div>
+
+        <div class="mt-8 flex items-center gap-3 bg-white/10 p-3 rounded-2xl backdrop-blur-md">
+            <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center shadow-inner">
+                <i class="fas fa-lightbulb text-white text-sm"></i>
+            </div>
+            <div>
+                <p class="text-[10px] text-green-100 uppercase tracking-widest font-bold">صاحب الفكرة والمبادرة</p>
+                <p class="text-sm font-bold">العباس إدريس علي إدريس</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="px-6 mt-8" id="main-content">
+        <!-- يتم تحميل المحتوى هنا -->
+    </main>
+
+    <!-- التنقل السفلي -->
+    <nav class="fixed bottom-6 left-6 right-6 h-20 bg-white/90 backdrop-blur-lg rounded-[2.5rem] shadow-2xl flex justify-around items-center px-4 border border-white/20 z-50">
+        <button onclick="showSection('social')" id="nav-social" class="flex flex-col items-center gap-1 transition-all">
+            <i class="fas fa-hands-helping text-xl"></i>
+            <span class="text-[9px] font-bold">التكافل</span>
+        </button>
+        <button onclick="showSection('infrastructure')" id="nav-infrastructure" class="flex flex-col items-center gap-1 text-gray-400">
+            <i class="fas fa-city text-xl"></i>
+            <span class="text-[9px] font-bold">العمران</span>
+        </button>
+        <button onclick="showSection('services')" id="nav-services" class="flex flex-col items-center gap-1 text-gray-400">
+            <i class="fas fa-road text-xl"></i>
+            <span class="text-[9px] font-bold">الخدمات</span>
+        </button>
+        <button onclick="showSection('youth')" id="nav-youth" class="flex flex-col items-center gap-1 text-gray-400">
+            <i class="fas fa-comment-dots text-xl"></i>
+            <span class="text-[9px] font-bold">رأيك</span>
+        </button>
+        <button onclick="showSection('admin')" id="nav-admin" class="flex flex-col items-center gap-1 text-gray-400">
+            <i class="fas fa-fingerprint text-xl"></i>
+            <span class="text-[9px] font-bold">الإدارة</span>
+        </button>
+    </nav>
+
+    <!-- مودال الحساب -->
+    <div id="accountModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm rounded-[3rem] p-10 text-center shadow-2xl scale-in">
+            <div class="w-20 h-20 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-university text-4xl"></i>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 mb-2">حساب التبرعات</h3>
+            <p class="text-sm text-slate-500 mb-8 font-bold">بنك فيصل الإسلامي - فرع القولد</p>
+            
+            <div class="bg-slate-50 p-6 rounded-[2rem] border-2 border-dashed border-slate-200 mb-8 relative group">
+                <p id="acc-num" class="text-2xl font-mono font-black text-green-900 tracking-tighter">52067764</p>
+                <p class="text-xs font-bold text-slate-400 mt-2 uppercase">باسم: العباس إدريس</p>
+            </div>
+
+            <button onclick="copyAcc()" class="w-full bg-green-800 text-white py-5 rounded-2xl font-black shadow-lg shadow-green-900/30 active:scale-95 transition-all">نسخ الرقم للتحويل</button>
+            <button onclick="toggleModal('accountModal')" class="mt-6 text-slate-400 font-bold text-sm">إغلاق النافذة</button>
+        </div>
+    </div>
+
+    <script>
+        const sections = {
+            social: `
+                <div class="animate-up space-y-6">
+                    <div class="glass-card p-6 border-r-8 border-green-800">
+                        <h3 class="font-black text-xl text-green-900 mb-3">شعارنا: يدٌ واحدة لغدٍ أفضل</h3>
+                        <p class="text-sm text-slate-600 leading-loose">نهدف لترسيخ قيم التكافل الاجتماعي وتفقد الأسر المتعففة ودعم الحالات الطارئة في منطقة لتي.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white p-5 rounded-[2rem] shadow-sm text-center">
+                            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <h4 class="font-bold text-xs">الحالات الطارئة</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">دعم طبي وعلاجي</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-[2rem] shadow-sm text-center">
+                            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-shopping-basket"></i>
+                            </div>
+                            <h4 class="font-bold text-xs">سلة البركة</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">دعم الأسر المتعففة</p>
+                        </div>
+                    </div>
+                </div>`,
+            
+            infrastructure: `
+                <div class="animate-up space-y-6">
+                    <h2 class="text-2xl font-black text-slate-800 mb-6">صيانة البنية التحتية</h2>
+                    
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="glass-card p-5 flex items-center gap-5">
+                            <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-[1.5rem] flex items-center justify-center text-2xl flex-shrink-0">
+                                <i class="fas fa-school"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-black text-sm">مدرسة لتي</h4>
+                                <p class="text-xs text-slate-500 mt-1">صيانة الفصول، توفير الإجلاس، وترميم المرافق الصحية.</p>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-5 flex items-center gap-5">
+                            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-[1.5rem] flex items-center justify-center text-2xl flex-shrink-0">
+                                <i class="fas fa-clinic-medical"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-black text-sm">المركز الصحي</h4>
+                                <p class="text-xs text-slate-500 mt-1">تحسين الخدمات الإسعافية وتوفير الأدوية المنقذة للحياة.</p>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-5 flex items-center gap-5">
+                            <div class="w-16 h-16 bg-purple-100 text-purple-700 rounded-[1.5rem] flex items-center justify-center text-2xl flex-shrink-0">
+                                <i class="fas fa-tshirt"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-black text-sm">النادي الاجتماعي</h4>
+                                <p class="text-xs text-slate-500 mt-1">تطوير المنشآت الرياضية ليكون ملتقى لشباب المنطقة.</p>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-5 flex items-center gap-5">
+                            <div class="w-16 h-16 bg-cyan-100 text-cyan-700 rounded-[1.5rem] flex items-center justify-center text-2xl flex-shrink-0">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-black text-sm">شبكة توزيع المياه</h4>
+                                <p class="text-xs text-slate-500 mt-1">معالجة الكسور، تغيير المواسير التالفة، وتأمين نظافة الخزانات.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`,
+
+            services: `
+                <div class="animate-up space-y-6">
+                    <h2 class="text-2xl font-black text-slate-800">خدمات الطرق والإنارة</h2>
+                    
+                    <div class="bg-amber-50 p-6 rounded-[2.5rem] border border-amber-100">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                                <i class="fas fa-tractor"></i>
+                            </div>
+                            <h4 class="font-black text-amber-900">ترميم الطرق الريفية</h4>
+                        </div>
+                        <p class="text-xs text-amber-800 leading-relaxed font-bold">مشروع ردم الطرق الداخلية وتسهيل حركة السيارات والمواطنين في فصل الخريف وتقليل الغبار والأتربة.</p>
+                    </div>
+
+                    <div class="bg-indigo-50 p-6 rounded-[2.5rem] border border-indigo-100">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h4 class="font-black text-indigo-900">إنارة الشوارع</h4>
+                        </div>
+                        <p class="text-xs text-indigo-800 leading-relaxed font-bold">تركيب لمبات إضاءة اقتصادية (LED) على كافة أعمدة توزيع الكهرباء في المنطقة لتأمين الطرق ليلاً.</p>
+                    </div>
+                </div>`,
+
+            youth: `
+                <div class="animate-up space-y-6">
+                    <h2 class="text-2xl font-black text-slate-800">ركن الشباب</h2>
+                    <div class="glass-card p-6">
+                        <p class="text-sm font-bold text-slate-500 mb-4">اقتراحاتكم هي وقود التطور في لتي..</p>
+                        <textarea id="suggestion-box" class="w-full bg-slate-50 p-5 rounded-[1.5rem] border-none focus:ring-2 focus:ring-green-600 outline-none text-sm min-h-[150px]" placeholder="ما هو حلمك لـ لتي قسم 2 شرق؟"></textarea>
+                        <button onclick="submitIdea()" class="w-full mt-4 bg-green-900 text-white py-4 rounded-2xl font-black shadow-xl shadow-green-900/20">إرسال الفكرة</button>
+                    </div>
+                </div>`,
+
+            admin: `
+                <div class="animate-up max-w-md mx-auto">
+                    <div id="admin-login" class="glass-card p-10 text-center">
+                        <div class="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-user-lock text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-black mb-6">لوحة الإدارة</h3>
+                        <input type="password" id="admin-pass" placeholder="الرمز السري الخاص بك" class="w-full p-4 bg-slate-50 rounded-2xl mb-6 text-center border focus:border-green-600 outline-none">
+                        <button onclick="checkAdmin()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-2xl">دخول المسؤول</button>
+                    </div>
+                </div>`
+        };
+
+        function showSection(id) {
+            document.getElementById('main-content').innerHTML = sections[id];
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('tab-active', 'text-green-700'));
+            document.getElementById('nav-' + id).classList.add('tab-active', 'text-green-700');
+            window.scrollTo(0, 0);
+        }
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.toggle('hidden');
+        }
+
+        function copyAcc() {
+            const num = "52067764";
+            const el = document.createElement('textarea');
+            el.value = num;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert("✅ تم نسخ رقم الحساب بنجاح");
+        }
+
+        function submitIdea() {
+            const text = document.getElementById('suggestion-box').value;
+            if(text.trim() === "") return alert("الرجاء كتابة المقترح أولاً");
+            alert("تم إرسال فكرتك بنجاح، شكراً للمشاركة يا بطل!");
+            document.getElementById('suggestion-box').value = "";
+        }
+
+        function checkAdmin() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === "2510") {
+                document.getElementById('main-content').innerHTML = `
+                    <div class="animate-up glass-card p-8 space-y-6">
+                        <h3 class="font-black text-center text-red-600 border-b pb-4 text-xl">لوحة التحكم (العباس)</h3>
+                        <div class="space-y-4">
+                            <div><label class="text-[10px] font-bold text-slate-400 mr-2">تحديث رقم الحساب</label><input class="w-full p-4 bg-slate-50 rounded-xl border mt-1" placeholder="52067764"></div>
+                            <div><label class="text-[10px] font-bold text-slate-400 mr-2">المبلغ المجمع (جنيه)</label><input type="number" class="w-full p-4 bg-slate-50 rounded-xl border mt-1" placeholder="0"></div>
+                            <div><label class="text-[10px] font-bold text-slate-400 mr-2">حالة طارئة جديدة</label><textarea class="w-full p-4 bg-slate-50 rounded-xl border mt-1" placeholder="اكتب تفاصيل الحالة هنا..."></textarea></div>
+                            <button onclick="alert('تم تحديث بيانات التطبيق')" class="w-full bg-green-700 text-white py-5 rounded-2xl font-black shadow-lg">حفظ التغييرات للجميع</button>
+                        </div>
+                    </div>`;
+            } else {
+                alert("الرمز السري غير صحيح");
+            }
+        }
+
+        window.onload = () => showSection('social');
+    </script>
+</body>
+</html>
+
